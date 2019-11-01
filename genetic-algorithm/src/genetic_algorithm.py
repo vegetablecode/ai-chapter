@@ -11,14 +11,29 @@ def get_initial_population(cities, population_size, initial_order):
     return population
 
 
-def calculate_fitness(cities, order):
-    cost = 0
+def calculate_distance(city_a, city_b):
+    delta_x = abs(city_a.x - city_b.x)
+    delta_y = abs(city_a.y - city_b.y)
+    return math.sqrt(delta_x**2 + delta_y**2)
+
+
+def calculate_route_length(cities, order):
+    total_length = 0
     for i in range(len(order) - 1):
-        delta_x = abs(cities[order[i]].x - cities[order[i+1]].x)
-        delta_y = abs(cities[order[i]].y - cities[order[i+1]].y)
-        distance = math.sqrt(delta_x**2 + delta_y**2)
-        cost += distance
-    return 1 / cost
+        total_length += calculate_distance(
+            cities[order[i]], cities[order[i+1]])
+    return total_length
+
+
+def calculate_fitness(cities, population):
+    fitness_scores = []
+    current_record = math.inf
+    for i in range(len(population)):
+        route_length = calculate_route_length(cities, population[i])
+        if route_length < current_record:
+            current_record = route_length
+        fitness_scores.append(1 / (route_length**8 + 1))
+    return fitness_scores, current_record
 
 
 def normalize_fitness(fitness_scores):
@@ -31,25 +46,25 @@ def normalize_fitness(fitness_scores):
     return normalized_fitness_scores
 
 
-def next_generation(cities, population):
-    fitness_scores = []
-    for i in range(len(population)):
-        fitness = calculate_fitness(cities, population[i])
-        fitness_scores.append(fitness)
-    probabilities = normalize_fitness(fitness_scores)
-
+def next_generation(cities, population, probabilities):
+    # new generation
     new_population = []
-    for i in range(len(population)):
-        order = pick_one(population, probabilities)
-        mutate(order)
-        new_population.append(order)
+    for _ in range(len(population)):
+        parent_a = pick_one(population, probabilities)
+        parent_b = pick_one(population, probabilities)
+        child = crossover(parent_a, parent_b)
+        mutate(child, 0.01)
+        new_population.append(child)
     return new_population
 
 
-def mutate(order):
-    # swap random elements
-    i1, i2 = random.sample(range(len(order)), 2)
-    order[i1], order[i2] = order[i2], order[i1]
+def mutate(order, mutation_rate):
+    for _ in range(len(order)):
+        if random.uniform(0, 1) < mutation_rate:
+            # swap random elements
+            i1 = random.randrange(0, len(order))
+            i2 = (i1 + 1) % len(order)
+            order[i1], order[i2] = order[i2], order[i1]
 
 
 def pick_one(population, probabilities):
@@ -64,32 +79,11 @@ def pick_one(population, probabilities):
     return copy.deepcopy(population[index])
 
 
-def select_parents(cities, population):
-    # get fitness score for each chromosome
-    fitnes_scores = []
-    for i in range(len(population)):
-        population_score = calculate_fitness(cities, population[i])
-        fitnes_scores.append(population_score)
-
-    # - ROULETTE RULE -
-    parents = []
-    roulette_wheel = []
-    roulette_wheel[0] = fitnes_scores[0]
-    for i in range(1, len(fitnes_scores)):
-        roulette_wheel[i] += roulette_wheel[i-1] + fitnes_scores[i]
-
-    # get 1st parent
-    result = random.uniform(0, sum(fitnes_scores))
-    for i in range(len(roulette_wheel) - 1, 0):
-        if roulette_wheel <= result:
-            parents.append(i)
-            break
-
-    # get 2st parent
-    parents.append(parents[0])
-    while parents[1] == parents[0]:
-        for i in range(len(roulette_wheel) - 1, 0):
-            if roulette_wheel <= result:
-                parents[1] = result
-                break
-    return(parents)
+def crossover(order_a, order_b):
+    start = random.randrange(0, len(order_a)-1)
+    end = random.randrange(start + 1, len(order_a)+1)
+    new_order = copy.deepcopy(order_a[start:end])
+    for i in range(len(order_b)):
+        if order_b[i] not in new_order:
+            new_order.append(order_b[i])
+    return new_order
