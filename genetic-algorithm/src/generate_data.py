@@ -12,7 +12,7 @@ def generate_data(numb_of_cities, max_distance):
     cities = []
     for i in range(numb_of_cities):
         alpha = random.uniform(middle, middle + r)
-        x = middle + r * math.sin(alpha)
-        y = middle + r * math.cos(alpha)
+        x = middle + r * math.cos(alpha)
+        y = middle + r * math.sin(alpha)
         cities.append(City(i, x, y))
     return cities

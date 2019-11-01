@@ -8,13 +8,15 @@ def get_cities_from_lists(x, y):
     return cities
 
 
-def get_id_list(cities):
-    return list((o.id for o in cities))
+def get_x_list(cities, order):
+    values = []
+    for i in range(len(order)):
+        values.append(cities[order[i]].x)
+    return values
 
 
-def get_x_list(cities):
-    return list((o.x for o in cities))
-
-
-def get_y_list(cities):
-    return list((o.y for o in cities))
+def get_y_list(cities, order):
+    values = []
+    for i in range(len(order)):
+        values.append(cities[order[i]].y)
+    return values
